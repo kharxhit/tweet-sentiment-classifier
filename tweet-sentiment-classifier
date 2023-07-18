@@ -1,0 +1,104 @@
+import nltk
+import re
+import string
+import numpy as np
+
+from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer
+from sklearn.model_selection import train_test_split
+
+# Download required NLTK resources
+nltk.download('stopwords')
+nltk.download('punkt')
+
+# Load the data
+tweets = [...]  # List of tweets
+labels = [...]  # List of corresponding labels (positive, neutral, negative)
+
+# Clean and pre-process the data
+stopwords_set = set(stopwords.words('english'))
+stemmer = PorterStemmer()
+
+def clean_tweet(tweet):
+    tweet = tweet.lower()  # Convert to lowercase
+    tweet = re.sub(r'https?://\S+|www\.\S+|@[^\s]+', '', tweet)  # Remove URLs and mentions
+    tweet = re.sub(r'\d+', '', tweet)  # Remove digits
+    tweet = tweet.translate(str.maketrans('', '', string.punctuation))  # Remove punctuation
+    tweet = nltk.word_tokenize(tweet)  # Tokenize the tweet
+
+    # Remove stopwords and perform stemming
+    tweet = [stemmer.stem(word) for word in tweet if word not in stopwords_set]
+    tweet = ' '.join(tweet)
+    
+    return tweet
+
+tweets_cleaned = [clean_tweet(tweet) for tweet in tweets]
+
+# Create the feature matrix using frequency counts
+def get_features(tweets):
+    features = np.zeros((len(tweets), len(all_words)))
+    
+    for i, tweet in enumerate(tweets):
+        words = nltk.word_tokenize(tweet)
+        for j, word in enumerate(all_words):
+            features[i, j] = words.count(word)
+    
+    return features
+
+# Create the labels matrix
+label_mapping = {'positive': 0, 'neutral': 1, 'negative': 2}
+labels_encoded = [label_mapping[label] for label in labels]
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(tweets_cleaned, labels_encoded, test_size=0.2, random_state=42)
+
+# Build the Logistic Regression model
+class LogisticRegression:
+    def __init__(self, lr=0.01, num_iter=1000):
+        self.lr = lr
+        self.num_iter = num_iter
+        self.weights = None
+        self.bias = None
+    
+    def sigmoid(self, z):
+        return 1 / (1 + np.exp(-z))
+    
+    def fit(self, X, y):
+        n_samples, n_features = X.shape
+        self.weights = np.zeros(n_features)
+        self.bias = 0
+        
+        for _ in range(self.num_iter):
+            linear_model = np.dot(X, self.weights) + self.bias
+            y_pred = self.sigmoid(linear_model)
+            
+            dw = (1 / n_samples) * np.dot(X.T, (y_pred - y))
+            db = (1 / n_samples) * np.sum(y_pred - y)
+            
+            self.weights -= self.lr * dw
+            self.bias -= self.lr * db
+    
+    def predict(self, X):
+        linear_model = np.dot(X, self.weights) + self.bias
+        y_pred = self.sigmoid(linear_model)
+        y_pred_class = np.where(y_pred >= 0.5, 1, 0)
+        return y_pred_class
+
+# Extract features using the Frequency Function
+all_words = nltk.word_tokenize(' '.join(tweets_cleaned))
+all_words = nltk.FreqDist(all_words)
+word_features = list(all_words.keys())
+
+X_train_features = get_features(X_train)
+X_test_features = get_features(X_test)
+
+# Train the Logistic Regression model
+model = LogisticRegression()
+model.fit(X_train_features, y_train)
+
+# Make predictions on the test set
+y_pred = model.predict(X_test_features)
+
+# Calculate accuracy
+accuracy = np.mean(y_pred == y_test) * 100
+print(f"Accuracy: {accuracy}%")
