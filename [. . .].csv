@@ -1,0 +1,31 @@
+import pandas as pd
+import numpy as np
+import random
+
+# Set the random seed for reproducibility
+random.seed(42)
+
+# Define the number of samples
+num_samples = 1000
+
+# Define the labels (positive, neutral, negative)
+labels = ['positive', 'neutral', 'negative']
+
+# Generate random tweets
+def generate_random_tweets():
+    tweets = []
+    for _ in range(num_samples):
+        num_words = random.randint(3, 10)
+        tweet = ' '.join(['word' + str(i) for i in range(1, num_words + 1)])
+        tweets.append(tweet)
+    return tweets
+
+# Generate random dataset
+data = pd.DataFrame(columns=['tweet', 'label'])
+data['tweet'] = generate_random_tweets()
+data['label'] = np.random.choice(labels, size=num_samples)
+
+# Save the dataset to a CSV file
+data.to_csv('random_dataset.csv', index=False)
+
+print("Random dataset created and saved as 'random_dataset.csv'.")
